@@ -6,7 +6,9 @@ date : 17/12/2024
 
 Toine:
 - Neural net model
+
 Jesper:
 - PCA on Random forest and regression
+
 Mailin:
 - Lasso regularisation
