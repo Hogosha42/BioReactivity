@@ -1,5 +1,5 @@
 import numpy as np
-from functools import lru_cache
+from functools import lru_cache, reduce
 import rdkit
 
 def GetFileData(path:str, ExcludeFirstRow:bool=False, template:list=None) -> list[tuple]:
@@ -23,27 +23,26 @@ def GetFileData(path:str, ExcludeFirstRow:bool=False, template:list=None) -> lis
     else: 
         return Final
 
+traindata = GetFileData("Datasets/train.csv", True, [str, int])
 testdata = GetFileData("Datasets/test.csv", True, [int, str])
-
-
-def exportCSV(data):
-    return 
 
 def getColumn(matrix, columnNum:int):
     return [x[columnNum] for x in matrix]
 
-def pca(data:list[tuple]):
-    # returns the principal components and their respective eigenvectors
-    meanrow = np.array(map(np.mean, [getColumn(data, i) for i in range(len(data))]))
-    B = np.array(data) - np.outer(np.array([1 for _ in range(len(data[0]))]), meanrow) #mean centered data
-    U,S,V = np.linalg.svd(B) # Singular value decomposition
-    return np.dot(U,S), np.vectorize(lambda x:x**2)(S)
+def autoscale(data):
+    return np.array([list(map(lambda v:(v-np.mean(x))/np.std(x) ,x)) for x in np.array(data).T]).T
+
+def PCA(data):
+    scaleddata = autoscale(data)
+    covmat = np.cov(scaleddata)
+    U,S,V = np.linalg.svd(covmat)
+
+    return np.dot(scaleddata, V), np.vectorize(lambda x:x**2)(S)
 
 def mapi(fun, ls):
 	return list(map(fun, range(len(ls)),ls))
 
 def scaling(data:list[tuple]):
-    @lru_cache(maxsize=50000)
     def scalefunc(x:float, column:list):
         return (x-min(column))/(max(column)-min(column))
     return mapi(lambda i,x:list(map(lambda y:scalefunc(y, getColumn(i)), x)), data)
@@ -54,9 +53,5 @@ def balancedAccuracy(data:list, prediction:list):
     return ((truepos/sum(y==1 for y in prediction))+(trueneg/sum(y==0 for y in prediction)))*0.5
 
 
-def Testmodel(data:list[tuple], model):
-    return 
-
-
 if __name__ == "__main__":
-    print()
+    pass
