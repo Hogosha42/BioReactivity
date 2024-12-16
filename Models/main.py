@@ -1,6 +1,5 @@
 import numpy as np
-from functools import lru_cache, reduce
-import rdkit
+from functools import reduce, lru_cache
 
 def GetFileData(path:str, ExcludeFirstRow:bool=False, template:list=None) -> list[tuple]:
     """GetFileData(Path, *[template=list[callables], ExcludeFirstRow:bool]) -> Data:list[tuple]
@@ -23,14 +22,18 @@ def GetFileData(path:str, ExcludeFirstRow:bool=False, template:list=None) -> lis
     else: 
         return Final
 
-traindata = GetFileData("Datasets/train.csv", True, [str, int])
-testdata = GetFileData("Datasets/test.csv", True, [int, str])
+traindata = GetFileData("Datasets/train.csv", True, [lambda x: x[1:-1], lambda x: 0 if x[1]=="0" else 1])
+testdata = GetFileData("Datasets/test.csv", True, [int, lambda x: x[1:-1]])
 
 def getColumn(matrix, columnNum:int):
     return [x[columnNum] for x in matrix]
 
 def autoscale(data):
-    return np.array([list(map(lambda v:(v-np.mean(x))/np.std(x) ,x)) for x in np.array(data).T]).T
+    
+    def scale(mu, sd):
+        return np.vectorize(lambda v:(v-mu)/sd if sd!=0 else 0)
+    
+    return np.array([scale(np.mean(x), np.std(x))(x) for x in np.array(data).T]).T
 
 def PCA(data):
     scaleddata = autoscale(data)
