@@ -38,17 +38,20 @@ def autoscale(data):
 def PCA(data):
     scaleddata = autoscale(data)
     covmat = np.cov(scaleddata)
-    U,S,V = np.linalg.svd(covmat)
+    A,V = np.linalg.eig(covmat)
 
-    return np.dot(scaleddata, V), np.vectorize(lambda x:x**2)(S)
+    return scaleddata @ V, A
 
 def mapi(fun, ls):
 	return list(map(fun, range(len(ls)),ls))
 
-def scaling(data:list[tuple]):
-    def scalefunc(x:float, column:list):
-        return (x-min(column))/(max(column)-min(column))
-    return mapi(lambda i,x:list(map(lambda y:scalefunc(y, getColumn(i)), x)), data)
+
+def scaling(data):
+
+    def scaleGen(minC:float, maxC:float):
+        return np.vectorize(lambda v: (v-minC)/(maxC-minC) if (maxC-minC) !=0 else 0)
+
+    return np.array([scaleGen(min(x), max(x))(x) for x in np.array(data).T]).T
 
 def balancedAccuracy(data:list, prediction:list):
     truepos = sum(yhat==1==y for y,yhat in zip(data, prediction))
